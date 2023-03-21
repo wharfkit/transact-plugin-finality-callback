@@ -3,12 +3,15 @@ import {
     TransactContext,
     TransactHookResponseType,
     TransactHookTypes,
+    Transaction,
 } from '@wharfkit/session'
 
 /** Import JSON localization strings */
 import defaultTranslations from './translations.json'
 
-export class TransactPluginTemplate extends AbstractTransactPlugin {
+const START_CHECKING_FINALITY_AFTER = 300000 // 5 minutes
+
+export class FinalityCheckerTransactPlugin extends AbstractTransactPlugin {
     /** A unique ID for this plugin */
     id = 'transact-plugin-template'
 
@@ -27,64 +30,44 @@ export class TransactPluginTemplate extends AbstractTransactPlugin {
             t = context.ui.getTranslate()
         }
 
-        // Register any desired beforeSign hooks
-        context.addHook(
-            TransactHookTypes.beforeSign,
-            async (request, context): Promise<TransactHookResponseType> => {
-                // If this plugin is interacting with the UI, throw an error since this is an undefined function
-                if (context.ui) {
-                    throw new Error(
-                        // Translate the error message against the given key or use the default value as English
-                        t('beforesign', {
-                            default: 'undefined beforeSign hook called from plugin template',
-                        })
-                    )
-                } else {
-                    // eslint-disable-next-line no-console
-                    console.log('undefined beforeSign hook called with', request, context)
-                }
-                return
-            }
-        )
-
-        // Register any desired afterSign hooks
-        context.addHook(
-            TransactHookTypes.afterSign,
-            async (request, context): Promise<TransactHookResponseType> => {
-                // If this plugin is interacting with the UI, throw an error since this is an undefined function
-                if (context.ui) {
-                    throw new Error(
-                        // Translate the error message against the given key or use the default value as English
-                        t('aftersign', {
-                            default: 'undefined afterSign hook called from plugin template',
-                        })
-                    )
-                } else {
-                    // eslint-disable-next-line no-console
-                    console.log('undefined afterSign hook called with', request, context)
-                }
-                return
-            }
-        )
-
         // Register any desired afterBroadcast hooks
         context.addHook(
             TransactHookTypes.afterBroadcast,
-            async (request, context): Promise<TransactHookResponseType> => {
-                // If this plugin is interacting with the UI, throw an error since this is an undefined function
-                if (context.ui) {
-                    throw new Error(
-                        // Translate the error message against the given key or use the default value as English
-                        t('afterbroadcast', {
-                            default: 'undefined afterBroadcast hook called from plugin template',
-                        })
-                    )
-                } else {
-                    // eslint-disable-next-line no-console
-                    console.log('undefined afterBroadcast hook called with', request, context)
-                }
-                return
+            (request, context): Promise<TransactHookResponseType> => {
+                setTimeout(async () => {
+                    waitForFinality(request.getRawTransaction(), context).then(() => {
+                        if (context.ui) {
+                            context.ui.status(
+                                t('finalityChecker.success', {default: 'Transaction is final.'})
+                            )
+                        }
+                    })
+                }, START_CHECKING_FINALITY_AFTER)
             }
         )
     }
+}
+
+async function waitForFinality(transaction: Transaction, context: TransactContext): Promise<void> {
+    return new Promise((resolve, reject) => {
+        context.client.v1.history
+            .get_transaction(transaction.id)
+            .then((response) => {
+                const isIrreversible = response.block_num <= response.last_irreversible_block
+                const irreversibleEta =
+                    Math.max(
+                        Number(response.block_num) - Number(response.last_irreversible_block) / 2,
+                        0
+                    ) * 1000
+
+                if (isIrreversible) {
+                    return resolve()
+                }
+
+                setTimeout(() => {
+                    waitForFinality(transaction, context).then(resolve).catch(reject)
+                }, irreversibleEta)
+            })
+            .catch(reject)
+    })
 }
