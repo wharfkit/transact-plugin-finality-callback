@@ -33,17 +33,19 @@ export class FinalityCheckerTransactPlugin extends AbstractTransactPlugin {
         // Register any desired afterBroadcast hooks
         context.addHook(
             TransactHookTypes.afterBroadcast,
-            (request, context): Promise<TransactHookResponseType> => {
-                setTimeout(async () => {
-                    waitForFinality(request.getRawTransaction(), context).then(() => {
-                        if (context.ui) {
-                            context.ui.status(
-                                t('finalityChecker.success', {default: 'Transaction is final.'})
-                            )
-                        }
-                    })
-                }, START_CHECKING_FINALITY_AFTER)
-            }
+            (request, context): Promise<TransactHookResponseType> =>
+                new Promise((resolve) => {
+                    setTimeout(async () => {
+                        waitForFinality(request.getRawTransaction(), context).then(() => {
+                            if (context.ui) {
+                                context.ui.status(
+                                    t('finalityChecker.success', {default: 'Transaction is final.'})
+                                )
+                            }
+                            return resolve()
+                        })
+                    }, START_CHECKING_FINALITY_AFTER)
+                })
         )
     }
 }

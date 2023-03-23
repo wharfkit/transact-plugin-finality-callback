@@ -1,5 +1,5 @@
 import {mockFetch} from '$test/utils/mock-fetch'
-import {TransactPluginTemplate} from '../../src/index'
+import {FinalityCheckerTransactPlugin} from '../../src/index'
 
 import {Session, SessionArgs, SessionOptions} from '@wharfkit/session'
 import {WalletPluginPrivateKey} from '@wharfkit/wallet-plugin-privatekey'
@@ -17,7 +17,7 @@ const mockSessionArgs: SessionArgs = {
 
 const mockSessionOptions: SessionOptions = {
     fetch: mockFetch,
-    transactPlugins: [new TransactPluginTemplate()],
+    transactPlugins: [new FinalityCheckerTransactPlugin()],
 }
 
 suite('example', function () {
