@@ -9,9 +9,22 @@ import {
 /** Import JSON localization strings */
 import defaultTranslations from './translations.json'
 
-const START_CHECKING_FINALITY_AFTER = 300000 // 5 minutes
+const START_CHECKING_FINALITY_AFTER = 120000 // 5 minutes
 
-export class FinalityCheckerTransactPlugin extends AbstractTransactPlugin {
+interface FinalityCheckerTransactPluginOptions {
+    onFinalityCallback?: () => void
+}
+
+export class TransactPluginFinalityChecker extends AbstractTransactPlugin {
+    onFinalityCallback: (() => void) | undefined
+
+    constructor({onFinalityCallback}: FinalityCheckerTransactPluginOptions = {}) {
+        super()
+
+        // Optional - Set the default translations for the plugin
+        this.onFinalityCallback = onFinalityCallback
+    }
+
     /** A unique ID for this plugin */
     id = 'transact-plugin-template'
 
@@ -36,12 +49,20 @@ export class FinalityCheckerTransactPlugin extends AbstractTransactPlugin {
             (request, context): Promise<TransactHookResponseType> =>
                 new Promise((resolve) => {
                     setTimeout(async () => {
+                        console.log('Checking finality...')
                         waitForFinality(request.getRawTransaction(), context).then(() => {
+                            console.log('Transaction is final.')
                             if (context.ui) {
                                 context.ui.status(
                                     t('finalityChecker.success', {default: 'Transaction is final.'})
                                 )
                             }
+
+                            if (this.onFinalityCallback) {
+                                console.log('Calling onFinalityCallback')
+                                this.onFinalityCallback()
+                            }
+
                             return resolve()
                         })
                     }, START_CHECKING_FINALITY_AFTER)
