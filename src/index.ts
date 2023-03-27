@@ -9,16 +9,16 @@ import {
 /** Import JSON localization strings */
 import defaultTranslations from './translations.json'
 
-const START_CHECKING_FINALITY_AFTER = 120000 // 5 minutes
+const START_CHECKING_FINALITY_AFTER = 1000 // 5 minutes
 
-interface FinalityCheckerTransactPluginOptions {
-    onFinalityCallback?: () => void
+interface TransactPluginFinalityCheckerOptions {
+    onFinalityCallback: () => void
 }
 
 export class TransactPluginFinalityChecker extends AbstractTransactPlugin {
-    onFinalityCallback: (() => void) | undefined
+    onFinalityCallback: () => void
 
-    constructor({onFinalityCallback}: FinalityCheckerTransactPluginOptions = {}) {
+    constructor({onFinalityCallback}: TransactPluginFinalityCheckerOptions) {
         super()
 
         // Optional - Set the default translations for the plugin
@@ -37,49 +37,45 @@ export class TransactPluginFinalityChecker extends AbstractTransactPlugin {
      * @param context The TransactContext of the transaction being performed
      */
     register(context: TransactContext): void {
-        // Optional - Retrieve the translation function from the UI if it exists
-        let t
-        if (context.ui) {
-            t = context.ui.getTranslate()
-        }
-
         // Register any desired afterBroadcast hooks
         context.addHook(
             TransactHookTypes.afterBroadcast,
-            (request, context): Promise<TransactHookResponseType> =>
-                new Promise((resolve) => {
-                    setTimeout(async () => {
-                        console.log('Checking finality...')
-                        waitForFinality(request.getRawTransaction(), context).then(() => {
-                            console.log('Transaction is final.')
-                            if (context.ui) {
-                                context.ui.status(
-                                    t('finalityChecker.success', {default: 'Transaction is final.'})
-                                )
-                            }
+            (request, context): Promise<TransactHookResponseType> => {
+                setTimeout(async () => {
+                    this.log('Checking transaction finality')
+                    waitForFinality(request.getRawTransaction(), context)
+                        .then(() => {
+                            this.log('Transaction finality reached')
 
-                            if (this.onFinalityCallback) {
-                                console.log('Calling onFinalityCallback')
-                                this.onFinalityCallback()
-                            }
-
-                            return resolve()
+                            this.onFinalityCallback()
                         })
-                    }, START_CHECKING_FINALITY_AFTER)
-                })
+                        .catch((error) => {
+                            this.log('Error while checking transaction finality', error)
+                        })
+                }, START_CHECKING_FINALITY_AFTER)
+
+                return Promise.resolve()
+            }
         )
+    }
+
+    log(...args: any[]) {
+        // eslint-disable-next-line no-console
+        console.log('TransactPluginFinalityChecker, LOG:', ...args)
     }
 }
 
 async function waitForFinality(transaction: Transaction, context: TransactContext): Promise<void> {
     return new Promise((resolve, reject) => {
+        let retries = 0
+
         context.client.v1.history
             .get_transaction(transaction.id)
             .then((response) => {
                 const isIrreversible = response.block_num <= response.last_irreversible_block
                 const irreversibleEta =
                     Math.max(
-                        Number(response.block_num) - Number(response.last_irreversible_block) / 2,
+                        (Number(response.block_num) - Number(response.last_irreversible_block)) / 2,
                         0
                     ) * 1000
 
@@ -91,6 +87,16 @@ async function waitForFinality(transaction: Transaction, context: TransactContex
                     waitForFinality(transaction, context).then(resolve).catch(reject)
                 }, irreversibleEta)
             })
-            .catch(reject)
+            .catch((error) => {
+                if (error.response && error.response.status === 404 && retries < 3) {
+                    retries++
+
+                    setTimeout(() => {
+                        waitForFinality(transaction, context).then(resolve).catch(reject)
+                    }, 5000)
+                } else {
+                    reject(error)
+                }
+            })
     })
 }
