@@ -9,7 +9,7 @@ import {
 /** Import JSON localization strings */
 import defaultTranslations from './translations.json'
 
-const START_CHECKING_FINALITY_AFTER = 1000 // 5 minutes
+const START_CHECKING_FINALITY_AFTER = 150000 // 2.5 minutes
 
 interface TransactPluginFinalityCheckerOptions {
     onFinalityCallback: () => void
@@ -65,14 +65,14 @@ export class TransactPluginFinalityChecker extends AbstractTransactPlugin {
     }
 }
 
+let retries = 0
+
 async function waitForFinality(transaction: Transaction, context: TransactContext): Promise<void> {
     return new Promise((resolve, reject) => {
-        let retries = 0
-
         context.client.v1.history
             .get_transaction(transaction.id)
             .then((response) => {
-                const isIrreversible = response.block_num <= response.last_irreversible_block
+                const isIrreversible = response.block_num >= response.last_irreversible_block
                 const irreversibleEta =
                     Math.max(
                         (Number(response.block_num) - Number(response.last_irreversible_block)) / 2,
