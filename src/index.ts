@@ -69,23 +69,16 @@ let retries = 0
 
 async function waitForFinality(transaction: Transaction, context: TransactContext): Promise<void> {
     return new Promise((resolve, reject) => {
-        context.client.v1.history
-            .get_transaction(transaction.id)
+        context.client.v1.chain
+            .get_transaction_status(transaction.id)
             .then((response) => {
-                const isIrreversible = response.block_num >= response.last_irreversible_block
-                const irreversibleEta =
-                    Math.max(
-                        (Number(response.block_num) - Number(response.last_irreversible_block)) / 2,
-                        0
-                    ) * 1000
-
-                if (isIrreversible) {
+                if (response.state === 'IRREVERSIBLE') {
                     return resolve()
                 }
 
                 setTimeout(() => {
                     waitForFinality(transaction, context).then(resolve).catch(reject)
-                }, irreversibleEta)
+                }, 5000)
             })
             .catch((error) => {
                 if (error.response && error.response.status === 404 && retries < 3) {
