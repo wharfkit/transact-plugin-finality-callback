@@ -26,7 +26,7 @@ export class TransactPluginFinalityChecker extends AbstractTransactPlugin {
     }
 
     /** A unique ID for this plugin */
-    id = 'transact-plugin-template'
+    id = 'transact-plugin-finality-callback'
 
     /** Optional - The translation strings to use for the plugin */
     translations = defaultTranslations
