@@ -3,7 +3,7 @@ import sinon from 'sinon'
 import {WalletPluginPrivateKey} from '@wharfkit/wallet-plugin-privatekey'
 
 import {mockFetch} from '$test/utils/mock-fetch'
-import {TransactPluginFinalityChecker} from '$lib'
+import {TransactPluginFinalityCallback} from '$lib'
 
 const wallet = new WalletPluginPrivateKey('5Jtoxgny5tT7NiNFp1MLogviuPJ9NniWjnU4wKzaX4t7pL4kJ8s')
 
@@ -21,14 +21,13 @@ const mockSessionOptions: SessionOptions = {
     transactPlugins: [],
 }
 
-suite('TransactPluginFinalityChecker', () => {
+suite('TransactPluginFinalityCallback', () => {
     let onFinalityCallback: sinon.SinonSpy
-    let finalityCheckPlugin: TransactPluginFinalityChecker
     let clock: sinon.SinonFakeTimers
 
     setup(() => {
         onFinalityCallback = sinon.spy()
-        finalityCheckPlugin = clock = sinon.useFakeTimers()
+        clock = sinon.useFakeTimers()
     })
 
     teardown(() => {
@@ -39,7 +38,7 @@ suite('TransactPluginFinalityChecker', () => {
         const session = new Session(mockSessionArgs, {
             ...mockSessionOptions,
             transactPlugins: [
-                new TransactPluginFinalityChecker({
+                new TransactPluginFinalityCallback({
                     onFinalityCallback: () => {
                         done()
                     },
@@ -72,6 +71,9 @@ suite('TransactPluginFinalityChecker', () => {
             .then(() => {
                 // Simulate the passage of time to trigger the setTimeout behavior
                 clock.tick(200000)
+            })
+            .catch((error) => {
+                throw error
             })
     })
 })

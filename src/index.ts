@@ -11,14 +11,14 @@ import defaultTranslations from './translations.json'
 
 const START_CHECKING_FINALITY_AFTER = 150000 // 2.5 minutes
 
-interface TransactPluginFinalityCheckerOptions {
+interface TransactPluginFinalityCallbackOptions {
     onFinalityCallback: () => void
 }
 
-export class TransactPluginFinalityChecker extends AbstractTransactPlugin {
+export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
     onFinalityCallback: () => void
 
-    constructor({onFinalityCallback}: TransactPluginFinalityCheckerOptions) {
+    constructor({onFinalityCallback}: TransactPluginFinalityCallbackOptions) {
         super()
 
         // Optional - Set the default translations for the plugin
