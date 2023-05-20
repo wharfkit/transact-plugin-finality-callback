@@ -2,21 +2,20 @@ import fetch, {Response} from 'node-fetch'
 import {join as joinPath} from 'path'
 import {promisify} from 'util'
 import {readFile as _readFile, writeFile as _writeFile} from 'fs'
-import {Bytes, Checksum160} from '@greymass/eosio'
 
 const readFile = promisify(_readFile)
 const writeFile = promisify(_writeFile)
 
 function getFilename(path: string, params?: unknown) {
-    const digest = Checksum160.hash(
-        Bytes.from(path + (params ? JSON.stringify(params) : ''), 'utf8')
-    ).hexString
-    return joinPath(__dirname, '../data', digest + '.json')
+    const pathParts = path.split('/')
+
+    return joinPath(__dirname, '../data', pathParts[pathParts.length - 1] + '.json')
 }
 
 async function getExisting(filename: string) {
     try {
         const data = await readFile(filename)
+
         return JSON.parse(data.toString('utf8'))
     } catch (error) {
         if ((<any>error).code !== 'ENOENT') {
@@ -30,7 +29,7 @@ export async function mockFetch(path, params) {
     if (process.env['MOCK'] !== 'overwrite') {
         const existing = await getExisting(filename)
         if (existing) {
-            return new Response(existing.text, {
+            return new Response(JSON.stringify(existing.json), {
                 status: existing.status,
                 headers: existing.headers,
             })
