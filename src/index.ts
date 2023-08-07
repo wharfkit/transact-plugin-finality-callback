@@ -11,20 +11,23 @@ import {
 /** Import JSON localization strings */
 import defaultTranslations from './translations.json'
 
-const START_CHECKING_FINALITY_AFTER = 150000 // 2.5 minutes
+const DEFAULT_FINALITY_CHECK_DELAY = 150000 // 2.5 minutes
 
 interface TransactPluginFinalityCallbackOptions {
     onFinalityCallback: () => void
+    finalityCheckDelay?: number
 }
 
 export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
     onFinalityCallback: () => void
+    finalityCheckDelay: number
 
-    constructor({onFinalityCallback}: TransactPluginFinalityCallbackOptions) {
+    constructor({onFinalityCallback, finalityCheckDelay}: TransactPluginFinalityCallbackOptions) {
         super()
 
         // Optional - Set the default translations for the plugin
         this.onFinalityCallback = onFinalityCallback
+        this.finalityCheckDelay = finalityCheckDelay || DEFAULT_FINALITY_CHECK_DELAY
     }
 
     /** A unique ID for this plugin */
@@ -60,7 +63,7 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
                         .catch((error) => {
                             this.log('Error while checking transaction finality', error)
                         })
-                }, START_CHECKING_FINALITY_AFTER)
+                }, this.finalityCheckDelay)
 
                 return Promise.resolve()
             }
