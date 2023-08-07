@@ -88,6 +88,8 @@ async function waitForFinality(transaction: Transaction, context: TransactContex
                     setTimeout(() => {
                         waitForFinality(transaction, context).then(resolve).catch(reject)
                     }, 5000)
+                } else if (error.response.status === 500) {
+                    reject(`This API node cannot be used with the finality callback plugin. Full Error: ${error}`)
                 } else {
                     reject(error)
                 }
