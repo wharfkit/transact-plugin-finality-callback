@@ -1,4 +1,5 @@
 import {
+    API,
     AbstractTransactPlugin,
     Checksum256,
     TransactContext,
@@ -14,12 +15,12 @@ import defaultTranslations from './translations.json'
 const DEFAULT_FINALITY_CHECK_DELAY = 150000 // 2.5 minutes
 
 interface TransactPluginFinalityCallbackOptions {
-    onFinalityCallback: () => void
+    onFinalityCallback: (response: API.v1.GetTransactionStatusResponse) => void
     finalityCheckDelay?: number
 }
 
 export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
-    onFinalityCallback: () => void
+    onFinalityCallback: (response: API.v1.GetTransactionStatusResponse) => void
     finalityCheckDelay: number
 
     constructor({onFinalityCallback, finalityCheckDelay}: TransactPluginFinalityCallbackOptions) {
@@ -55,10 +56,10 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
                 setTimeout(async () => {
                     this.log('Checking transaction finality')
                     waitForFinality(resolved.transaction.id, context)
-                        .then(() => {
+                        .then((transactionResponse) => {
                             this.log('Transaction finality reached')
 
-                            this.onFinalityCallback()
+                            this.onFinalityCallback(transactionResponse)
                         })
                         .catch((error) => {
                             this.log('Error while checking transaction finality', error)
@@ -78,14 +79,14 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
 
 let retries = 0
 
-async function waitForFinality(transactionId: Checksum256, context: TransactContext): Promise<void> {
+async function waitForFinality(transactionId: Checksum256, context: TransactContext): Promise<API.v1.GetTransactionStatusResponse> {
     console.log({transactionId})
     return new Promise((resolve, reject) => {
         context.client.v1.chain
             .get_transaction_status(transactionId)
             .then((response) => {
                 if (response.state === 'IRREVERSIBLE') {
-                    return resolve()
+                    return resolve(response)
                 }
 
                 setTimeout(() => {
