@@ -45,6 +45,7 @@ suite('TransactPluginFinalityCallback', () => {
                 }),
             ],
         })
+        console.log({session})
         const action = {
             authorization: [
                 {

@@ -1,8 +1,10 @@
 import {
     AbstractTransactPlugin,
+    Checksum256,
     TransactContext,
     TransactHookResponseType,
     TransactHookTypes,
+    TransactResult,
     Transaction,
 } from '@wharfkit/session'
 
@@ -40,8 +42,13 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
         // Register any desired afterBroadcast hooks
         context.addHook(
             TransactHookTypes.afterBroadcast,
-            (result, context): Promise<TransactHookResponseType> => {
+            (result: TransactResult, context: TransactContext): Promise<TransactHookResponseType> => {
+                console.log({result})
                 const { resolved } = result
+
+                if (!resolved) {
+                    throw Error("Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work.")
+                }
                 setTimeout(async () => {
                     this.log('Checking transaction finality')
                     waitForFinality(resolved.transaction.id, context)
@@ -68,17 +75,18 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
 
 let retries = 0
 
-async function waitForFinality(transaction: Transaction, context: TransactContext): Promise<void> {
+async function waitForFinality(transactionId: Checksum256, context: TransactContext): Promise<void> {
+    console.log({transactionId})
     return new Promise((resolve, reject) => {
         context.client.v1.chain
-            .get_transaction_status(transaction.id)
+            .get_transaction_status(transactionId)
             .then((response) => {
                 if (response.state === 'IRREVERSIBLE') {
                     return resolve()
                 }
 
                 setTimeout(() => {
-                    waitForFinality(transaction, context).then(resolve).catch(reject)
+                    waitForFinality(transactionId, context).then(resolve).catch(reject)
                 }, 5000)
             })
             .catch((error) => {
@@ -86,7 +94,7 @@ async function waitForFinality(transaction: Transaction, context: TransactContex
                     retries++
 
                     setTimeout(() => {
-                        waitForFinality(transaction, context).then(resolve).catch(reject)
+                        waitForFinality(transactionId, context).then(resolve).catch(reject)
                     }, 5000)
                 } else if (error.response.status === 500) {
                     reject(`This API node cannot be used with the finality callback plugin. Full Error: ${error}`)
