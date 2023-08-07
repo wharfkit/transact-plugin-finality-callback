@@ -40,10 +40,11 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
         // Register any desired afterBroadcast hooks
         context.addHook(
             TransactHookTypes.afterBroadcast,
-            (request, context): Promise<TransactHookResponseType> => {
+            (result, context): Promise<TransactHookResponseType> => {
+                const { resolved } = result
                 setTimeout(async () => {
                     this.log('Checking transaction finality')
-                    waitForFinality(request.getRawTransaction(), context)
+                    waitForFinality(resolved.transaction.id, context)
                         .then(() => {
                             this.log('Transaction finality reached')
 
