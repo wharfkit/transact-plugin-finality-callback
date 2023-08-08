@@ -17,7 +17,7 @@ new SessionKit(sessionArgs, {
     ...
     transactPlugins: [
         new TransactPluginFinalityCallback({
-            onFinalityCallback: () => {
+            onFinalityCallback: (getTransactionStatusResponse) => {
                 // This will be called when the transaction has reached finality
             },
         }),
