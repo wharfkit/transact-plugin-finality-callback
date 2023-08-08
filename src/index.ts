@@ -1,12 +1,11 @@
 import {
-    API,
     AbstractTransactPlugin,
+    API,
     Checksum256,
     TransactContext,
     TransactHookResponseType,
     TransactHookTypes,
     TransactResult,
-    Transaction,
 } from '@wharfkit/session'
 
 /** Import JSON localization strings */
@@ -46,12 +45,16 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
         // Register any desired afterBroadcast hooks
         context.addHook(
             TransactHookTypes.afterBroadcast,
-            (result: TransactResult, context: TransactContext): Promise<TransactHookResponseType> => {
-                console.log({result})
-                const { resolved } = result
+            (
+                result: TransactResult,
+                context: TransactContext
+            ): Promise<TransactHookResponseType> => {
+                const {resolved} = result
 
                 if (!resolved) {
-                    throw Error("Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work.")
+                    throw Error(
+                        'Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work.'
+                    )
                 }
                 setTimeout(async () => {
                     this.log('Checking transaction finality')
@@ -79,8 +82,10 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
 
 let retries = 0
 
-async function waitForFinality(transactionId: Checksum256, context: TransactContext): Promise<API.v1.GetTransactionStatusResponse> {
-    console.log({transactionId})
+async function waitForFinality(
+    transactionId: Checksum256,
+    context: TransactContext
+): Promise<API.v1.GetTransactionStatusResponse> {
     return new Promise((resolve, reject) => {
         context.client.v1.chain
             .get_transaction_status(transactionId)
@@ -101,7 +106,9 @@ async function waitForFinality(transactionId: Checksum256, context: TransactCont
                         waitForFinality(transactionId, context).then(resolve).catch(reject)
                     }, 5000)
                 } else if (error.response.status === 500) {
-                    reject(`This API node cannot be used with the finality callback plugin. Full Error: ${error}`)
+                    reject(
+                        `This API node cannot be used with the finality callback plugin. Full Error: ${error}`
+                    )
                 } else {
                     reject(error)
                 }
