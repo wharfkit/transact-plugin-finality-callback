@@ -16,18 +16,21 @@ const DEFAULT_FINALITY_CHECK_DELAY = 150000 // 2.5 minutes
 interface TransactPluginFinalityCallbackOptions {
     onFinalityCallback: (response: API.v1.GetTransactionStatusResponse) => void
     finalityCheckDelay?: number
+    logging?: boolean
 }
 
 export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
     onFinalityCallback: (response: API.v1.GetTransactionStatusResponse) => void
     finalityCheckDelay: number
+    logging: boolean
 
-    constructor({onFinalityCallback, finalityCheckDelay}: TransactPluginFinalityCallbackOptions) {
+    constructor({onFinalityCallback, finalityCheckDelay, logging}: TransactPluginFinalityCallbackOptions) {
         super()
 
         // Optional - Set the default translations for the plugin
         this.onFinalityCallback = onFinalityCallback
         this.finalityCheckDelay = finalityCheckDelay || DEFAULT_FINALITY_CHECK_DELAY
+        this.logging = logging || false
     }
 
     /** A unique ID for this plugin */
@@ -75,6 +78,9 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
     }
 
     log(...args: any[]) {
+        if (!this.logging) {
+            return
+        }
         // eslint-disable-next-line no-console
         console.log('TransactPluginFinalityChecker, LOG:', ...args)
     }
