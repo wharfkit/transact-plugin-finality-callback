@@ -9,7 +9,7 @@ import {
 } from '@wharfkit/session'
 
 /** Import JSON localization strings */
-import defaultTranslations from './translations.json'
+import defaultTranslations from './translations'
 
 const DEFAULT_FINALITY_CHECK_DELAY = 150000 // 2.5 minutes
 
@@ -45,6 +45,14 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
      * @param context The TransactContext of the transaction being performed
      */
     register(context: TransactContext): void {
+        // Optional - Retrieve the translation function from the UI if it exists
+        let t
+        if (context.ui) {
+            t = context.ui.getTranslate()
+        } else {
+            t = (_key: string, args: { default: string }) => args.default
+        }
+
         // Register any desired afterBroadcast hooks
         context.addHook(
             TransactHookTypes.afterBroadcast,
@@ -56,7 +64,9 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
 
                 if (!resolved) {
                     throw Error(
-                        'Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work.'
+                        t('resolved_request_not_returned', {
+                            default: 'Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work.'
+                        })
                     )
                 }
                 setTimeout(async () => {

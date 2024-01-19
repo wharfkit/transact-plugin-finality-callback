@@ -1,0 +1,3 @@
+{
+    "resolved_request_not_returned": "Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work."
+}
