@@ -1,16 +1,18 @@
 # @wharfkit/transact-plugin-finality-callback
 
-A template to create a `transactPlugin` for use during a `transact` call within the `@wharfkit/session` library.
+A WharfKit [transact plugin](https://wharfkit.com/docs/session-kit/plugin-transact) plugin that calls a callback function when a transaction has reached finality.
 
 ## Usage
 
 Install the plugin:
 
 ```bash
+npm install @wharfkit/transact-plugin-finality-callback --save
+# or
 yarn add @wharfkit/transact-plugin-finality-callback
 ```
 
-Then, when instantiating the SessionKit, add the `TransactPluginFinalityCallback` plugin to the `transactPlugins` array . The plugin will call the `onFinalityCallback` function when the transaction has reached finality.
+Then, when instantiating the SessionKit, add the `TransactPluginFinalityCallback` plugin to the `transactPlugins` array. The plugin will call the `onFinalityCallback` function when transactions reach finality.
 
 ```
 new SessionKit(sessionArgs, {
