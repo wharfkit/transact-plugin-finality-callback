@@ -24,7 +24,11 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
     finalityCheckDelay: number
     logging: boolean
 
-    constructor({onFinalityCallback, finalityCheckDelay, logging}: TransactPluginFinalityCallbackOptions) {
+    constructor({
+        onFinalityCallback,
+        finalityCheckDelay,
+        logging,
+    }: TransactPluginFinalityCallbackOptions) {
         super()
 
         // Optional - Set the default translations for the plugin
@@ -50,7 +54,7 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
         if (context.ui) {
             t = context.ui.getTranslate()
         } else {
-            t = (_key: string, args: { default: string }) => args.default
+            t = (_key: string, args: {default: string}) => args.default
         }
 
         // Register any desired afterBroadcast hooks
@@ -65,7 +69,8 @@ export class TransactPluginFinalityCallback extends AbstractTransactPlugin {
                 if (!resolved) {
                     throw Error(
                         t('resolved_request_not_returned', {
-                            default: 'Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work.'
+                            default:
+                                'Resolved Request not returned on afterBroadcast hook. This value is needed for the Finality Callback plugin to work.',
                         })
                     )
                 }
