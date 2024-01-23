@@ -1,8 +1,9 @@
-import {mockFetch} from '$test/utils/mock-fetch'
-import {TransactPluginTemplate} from '../../src/index'
-
 import {Session, SessionArgs, SessionOptions} from '@wharfkit/session'
+import sinon from 'sinon'
 import {WalletPluginPrivateKey} from '@wharfkit/wallet-plugin-privatekey'
+
+import {mockFetch} from '$test/utils/mock-fetch'
+import {TransactPluginFinalityCallback} from '$lib'
 
 const wallet = new WalletPluginPrivateKey('5Jtoxgny5tT7NiNFp1MLogviuPJ9NniWjnU4wKzaX4t7pL4kJ8s')
 
@@ -16,34 +17,63 @@ const mockSessionArgs: SessionArgs = {
 }
 
 const mockSessionOptions: SessionOptions = {
-    fetch: mockFetch,
-    transactPlugins: [new TransactPluginTemplate()],
+    fetch: mockFetch, // Replace `mockFetch` with `null` if it's not defined
+    transactPlugins: [],
 }
 
-suite('example', function () {
-    test('plugin usage', async function () {
-        const session = new Session(mockSessionArgs, mockSessionOptions)
+suite('TransactPluginFinalityCallback', () => {
+    let onFinalityCallback: sinon.SinonSpy
+    let clock: sinon.SinonFakeTimers
+
+    setup(() => {
+        onFinalityCallback = sinon.spy()
+        clock = sinon.useFakeTimers()
+    })
+
+    teardown(() => {
+        clock.restore()
+    })
+
+    test('should call onFinalityCallback when finality is reached', (done) => {
+        const session = new Session(mockSessionArgs, {
+            ...mockSessionOptions,
+            transactPlugins: [
+                new TransactPluginFinalityCallback({
+                    onFinalityCallback: () => {
+                        done()
+                    },
+                }),
+            ],
+        })
         const action = {
             authorization: [
                 {
-                    actor: 'wharfkit1115',
+                    actor: 'wharfkit1131',
                     permission: 'test',
                 },
             ],
             account: 'eosio.token',
             name: 'transfer',
             data: {
-                from: 'wharfkit1115',
+                from: 'wharfkit1131',
                 to: 'wharfkittest',
                 quantity: '0.0001 EOS',
                 memo: 'wharfkit plugin - resource provider test (maxFee: 0.0001)',
             },
         }
-        await session.transact(
-            {
-                action,
-            },
-            {broadcast: false}
-        )
+        session
+            .transact(
+                {
+                    action,
+                },
+                {broadcast: true}
+            )
+            .then(() => {
+                // Simulate the passage of time to trigger the setTimeout behavior
+                clock.tick(200000)
+            })
+            .catch((error) => {
+                throw error
+            })
     })
 })
