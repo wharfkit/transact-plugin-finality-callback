@@ -1,7 +1,7 @@
 {
     "name": "@wharfkit/transact-plugin-finality-callback",
     "description": "A template to create plugins for use with @wharfkit/session transact method.",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "homepage": "https://github.com/wharfkit/transact-plugin-finality-callback",
     "license": "BSD-3-Clause",
     "main": "lib/transact-plugin-finality-callback.js",
