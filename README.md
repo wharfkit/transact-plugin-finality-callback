@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This package lives in the WharfKit monorepo at [wharfkit/js/packages/transact-plugin-finality-callback](https://github.com/wharfkit/js/tree/dev/packages/transact-plugin-finality-callback), and this repository is archived. Open new issues and pull requests on [wharfkit/js](https://github.com/wharfkit/js).
+
 # @wharfkit/transact-plugin-finality-callback
 
 A WharfKit [transact plugin](https://wharfkit.com/docs/session-kit/plugin-transact) plugin that calls a callback function when a transaction has reached finality.
